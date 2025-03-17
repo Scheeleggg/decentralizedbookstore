@@ -1,0 +1,84 @@
+%lang starknet
+
+@storage_var('owner')
+func owner() -> (res: felt252):
+    return (res=0)
+end
+
+struct Book {
+    title: felt252,
+    author: felt252,
+    description: felt252,
+    price: u16,
+    quantity: u8,
+}
+
+@storage_var('books', index=felt252)
+func books(book_id: felt252) -> (res: Book):
+    return (res=Book(title=0, author=0, description=0, price=0, quantity=0))
+end
+
+@storage_var('book_count')
+func book_count() -> (res: felt252):
+    return (res=0)
+end
+
+@constructor
+func constructor{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}(initial_owner: felt252):
+    owner.write(initial_owner)
+    return ()
+end
+
+@external
+func add_book{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}(
+    title: felt252, author: felt252, description: felt252, price: u16, quantity: u8
+):
+    let (current_owner) = owner.read()
+    let (caller_address) = get_caller_address()
+    assert caller_address = current_owner, 'Not the owner'
+
+    let (id) = book_count.read()
+    books.write(id, Book(title=title, author=author, description=description, price=price, quantity=quantity))
+    book_count.write(id + 1)
+    return ()
+end
+
+@external
+func update_book{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}(
+    book_id: felt252, price: u16, quantity: u8
+):
+    let (current_owner) = owner.read()
+    let (caller_address) = get_caller_address()
+    assert caller_address = current_owner, 'Not the owner'
+
+    let (book) = books.read(book_id)
+    books.write(book_id, Book(title=book.title, author=book.author, description=book.description, price=price, quantity=quantity))
+    return ()
+end
+
+@external
+func remove_book{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}(book_id: felt252):
+    let (current_owner) = owner.read()
+    let (caller_address) = get_caller_address()
+    assert caller_address = current_owner, 'Not the owner'
+    books.write(book_id, Book(title=0, author=0, description=0, price=0, quantity=0))
+    return ()
+end
+
+@view
+func get_book{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}(book_id: felt252) -> (res: Book):
+    let (book) = books.read(book_id)
+    return (res=book)
+end
+
+@view
+func get_book_count{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}() -> (count: felt252):
+    let (book_count_val) = book_count.read()
+    return (count=book_count_val)
+end
+
+@view
+func get_owner{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}() -> (owner_address: felt252):
+    let (current_owner) = owner.read()
+    return (owner_address=current_owner)
+end
