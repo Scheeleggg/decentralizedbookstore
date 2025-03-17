@@ -1,0 +1,17 @@
+%lang starknet
+
+@external
+func buy_book{syscall_ptr: felt*, pedersen_ptr: felt*, range_check_ptr: felt*}(
+    bookstore_address: felt252, book_id: felt252, quantity_to_buy: u8
+):
+    // Call the Bookstore contract to get book details
+    let (book) = bookstore_address.get_book(book_id=book_id)
+
+    // Check if enough quantity is available
+    assert book.quantity >= quantity_to_buy, 'Not enough books available'
+
+    // Update the book quantity in the Bookstore contract
+    bookstore_address.update_book(book_id=book_id, price=book.price, quantity=book.quantity - quantity_to_buy)
+
+    return ()
+end
